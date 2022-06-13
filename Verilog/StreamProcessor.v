@@ -1,6 +1,6 @@
 module StreamProcessor #(
-    parameter my_position_x,
-    parameter my_position_y
+    parameter my_position_x = 0,
+    parameter my_position_y = 0
 ) (
     input wire clk,
     input wire reset_n,

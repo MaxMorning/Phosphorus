@@ -10,6 +10,13 @@ module GPUTop (
     output wire [31:0] wb_dat_o,
     output wire        wb_ack_o,
 
+    input wire clk_25_175MHz,
+
+    output wire [3:0] oRed, // red signal
+    output wire [3:0] oGreen, // green signal
+    output wire [3:0] oBlue, // blue signal
+    output wire oHs, // Hori sync
+    output wire oVs // Vert sync
 );
     wire sm_ena;
     wire [2 * 16 * 8 - 1 :0] texture_data_bus;
@@ -41,7 +48,7 @@ module GPUTop (
         end
     endgenerate
 
-    reg wishbone_ena; // 分频为50MHz，匹配Wishbone总线
+    reg wishbone_ena; // 分频�?50MHz，匹配Wishbone总线
 
 
     wire [7:0] texture_idx;
@@ -103,6 +110,9 @@ module GPUTop (
 
     wire output_ena;
 
+    wire [5:0] current_tile_x;
+    wire [5:0] current_tile_y;
+    wire [3:0] tile_row;
     
     GPUController controller(
         .clk(clk_100MHz),
@@ -128,6 +138,9 @@ module GPUTop (
 
         .o_output_ena(output_ena),
 
+        .o_current_tile_x(current_tile_x),
+        .o_current_tile_y(current_tile_y),
+        .o_tile_row(tile_row),
         .o_sm_render_done(sm_render_done)
     );
 
@@ -177,4 +190,24 @@ module GPUTop (
         .i_waddr(wb_adr_i)
     );
 
+
+    VGADriver vga_driver(
+        .clk(clk_100MHz),
+        .clk_vga(clk_25_175MHz),
+        
+        .reset_n(reset_n),
+
+        .i_sm_render_done(sm_render_done),
+        .i_current_tile_x(current_tile_x),
+        .i_current_tile_y(current_tile_y),
+        .i_tile_row(tile_row),
+
+        .i_sm_color_data(sm_color_data),
+
+        .oRed(oRed),
+        .oGreen(oGreen),
+        .oBlue(oBlue),
+        .oHs(oHs),
+        .oVs(oVs)
+    );
 endmodule
