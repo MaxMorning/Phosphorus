@@ -27,7 +27,7 @@ module StreamProcessor #(
             ena &&
             current_position <= i_position_z &&
             my_position_x >= i_start_x &&
-            (i_position_z == 0 || new_color != 0)
+            (i_position_z == 0 || new_color != 255)
         ) begin
             current_color <= new_color;
             current_position <= i_position_z;

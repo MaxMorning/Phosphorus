@@ -1,8 +1,6 @@
 module GPUTop (
     input wire clk_100MHz,
-    input wire wb_rst_i,
-    input wire wb_cyc_i,
-    input wire wb_stb_i,
+    input wire reset_n,
     input wire wb_we_i,
     input wire [3:0] wb_sel_i,
     input wire [26:0] wb_adr_i,
@@ -10,7 +8,7 @@ module GPUTop (
     output wire [31:0] wb_dat_o,
     output wire        wb_ack_o,
 
-    input wire clk_25_175MHz,
+    input wire clk_vga,
 
     output wire [3:0] oRed, // red signal
     output wire [3:0] oGreen, // green signal
@@ -48,7 +46,7 @@ module GPUTop (
         end
     endgenerate
 
-    reg wishbone_ena; // 分频�?50MHz，匹配Wishbone总线
+    reg wishbone_ena; // 分频�?50MHz，匹配Wishbone总线
 
 
     wire [7:0] texture_idx;
@@ -193,7 +191,7 @@ module GPUTop (
 
     VGADriver vga_driver(
         .clk(clk_100MHz),
-        .clk_vga(clk_25_175MHz),
+        .clk_vga(clk_vga),
         
         .reset_n(reset_n),
 

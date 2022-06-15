@@ -18,18 +18,18 @@ module VGADriver (
 );
 
     /* -----------------------------VGA Part------------------------------ */
-    // 640 * 480
-    parameter   C_H_SYNC_PULSE   = 96, 
-                C_H_BACK_PORCH   = 48,
-                C_H_ACTIVE_TIME  = 640,
-                C_H_FRONT_PORCH  = 16,
-                C_H_LINE_PERIOD  = 800;
+    // 800 * 600
+    parameter   C_H_SYNC_PULSE   = 128, 
+                C_H_BACK_PORCH   = 88,
+                C_H_ACTIVE_TIME  = 800,
+                C_H_FRONT_PORCH  = 40,
+                C_H_LINE_PERIOD  = 1056;
     
-    parameter   C_V_SYNC_PULSE   = 2, 
-                C_V_BACK_PORCH   = 33,
-                C_V_ACTIVE_TIME  = 480,
-                C_V_FRONT_PORCH  = 10,
-                C_V_FRAME_PERIOD = 525;
+    parameter   C_V_SYNC_PULSE   = 4, 
+                C_V_BACK_PORCH   = 23,
+                C_V_ACTIVE_TIME  = 600,
+                C_V_FRONT_PORCH  = 1,
+                C_V_FRAME_PERIOD = 628;
     
     
 
@@ -50,11 +50,19 @@ module VGADriver (
 
 
     //Vert
-    always @ (posedge oHs or negedge reset_n) begin
-        if (!reset_n || vCnt == C_V_FRAME_PERIOD - 1)
-            vCnt <= 11'd0;
-        else
+    always @ (posedge clk_vga or negedge reset_n) begin
+        if (!reset_n) begin
+            vCnt <= 11'h0;
+        end
+        else if ((vCnt == C_V_FRAME_PERIOD - 1'b1) && (hCnt == C_H_LINE_PERIOD - 1'b1)) begin
+            vCnt <= 11'h0;
+        end
+        else if (hCnt == C_H_LINE_PERIOD - 1'b1) begin
             vCnt <= vCnt + 1;
+        end
+        else begin
+            vCnt <= vCnt;
+        end
     end
 
     assign oVs = (vCnt < C_V_SYNC_PULSE) ? 1'b0 : 1'b1;
@@ -90,9 +98,16 @@ module VGADriver (
             oBlue <= 4'b0000;
         end
         else if (isActive) begin
-            oRed <= read_color_red[7:4];
-            oGreen <= read_color_green[7:4];
-            oBlue <= read_color_blue[7:4];
+            if (vPos < 480 && hPos < 640) begin
+                oRed <= read_color_red[7:4];
+                oGreen <= read_color_green[7:4];
+                oBlue <= read_color_blue[7:4];
+            end
+            else begin
+                oRed <= 4'b0000;
+                oGreen <= 4'b0000;
+                oBlue <= 4'b1111;
+            end
         end
         else begin
             oRed <= 4'b0000;
