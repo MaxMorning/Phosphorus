@@ -119,10 +119,11 @@ module VGADriver (
 
     /* -----------------------------FrameBuffer Part------------------------------ */
     reg store_second_16_byte;
+    reg[127:0] next_16_byte_data;
 
-    wire frame_buffer_we = i_sm_render_done;
+    wire frame_buffer_we = i_sm_render_done | store_second_16_byte;
 
-    wire [127:0] frame_buffer_write_data = store_second_16_byte ? i_sm_color_data[255:128] : i_sm_color_data[127:0];
+    wire [127:0] frame_buffer_write_data = store_second_16_byte ? next_16_byte_data : i_sm_color_data[127:0];
     wire [9:0] frame_buffer_write_row = {i_current_tile_y, i_tile_row[3:1], store_second_16_byte};
     wire [14:0] frame_buffer_write_address = {frame_buffer_write_row, 5'h0} + {frame_buffer_write_row, 3'h0} + i_current_tile_x;
 
@@ -141,8 +142,11 @@ module VGADriver (
     always @(posedge clk) begin
         if (!reset_n) begin
             store_second_16_byte <= 0;
+            next_16_byte_data <= 0;
         end
         else begin
+            next_16_byte_data <= i_sm_color_data[255:128];
+
             if (i_sm_render_done) begin
                 store_second_16_byte <= 1;
             end
