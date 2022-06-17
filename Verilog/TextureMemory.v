@@ -23,7 +23,7 @@ module TextureMemory (
                 .dina(i_wdata),    // input wire [31 : 0] dina
                 .clkb(clk),    // input wire clkb
                 .addrb(i_texture_idx[6:0]),  // input wire [6 : 0] addrb
-                .doutb(o_texture_data[128 * i + 127 -: 127])  // output wire [128 : 0] doutb
+                .doutb(o_texture_data[128 * i + 127 -: 128])  // output wire [128 : 0] doutb
             );
         end
     endgenerate

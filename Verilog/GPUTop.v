@@ -18,10 +18,13 @@ module GPUTop (
 );
     wire sm_ena;
     wire [16 * 16 * 8 - 1 :0] texture_data_bus;
-    wire [3:0] sm_start_x;
+    wire [4:0] sm_start_x;
+    wire [4:0] sm_start_y;
     wire [7:0] sm_position_z;
 
-    wire [16 * 8 - 1 :0] sm_color_data[15:0];
+    wire [16 * 16 * 8 - 1 :0] sm_color_data;
+
+    wire [3:0] texture_row_idx[15:0];
 
     wire sm_render_done;
 
@@ -30,19 +33,21 @@ module GPUTop (
     generate
         for (sm_pos_y = 0; sm_pos_y < 16; sm_pos_y = sm_pos_y + 1) begin
             for (sm_pos_x = 0; sm_pos_x < 16; sm_pos_x = sm_pos_x + 1) begin
-                StreamProcessor #(sm_pos_x) sm_inst (
+                StreamProcessor #(sm_pos_x, sm_pos_y) sm_inst (
                     .clk(clk_100MHz),
                     .reset_n(reset_n & ~sm_render_done),
 
                     .ena(sm_ena),
 
-                    .i_texture_data(texture_data_bus),
+                    .i_texture_data(texture_data_bus[texture_row_idx[sm_pos_y] * 128 + 127 -: 128]),
                     .i_start_x(sm_start_x),
                     .i_position_z(sm_position_z),
 
-                    .o_color(sm_color_data[sm_pos_y][{sm_pos_x, 3'h7} -: 8])
+                    .o_color(sm_color_data[{sm_pos_y[3:0], sm_pos_x[3:0], 3'h7} -: 8])
                 );
             end
+
+            assign texture_row_idx[sm_pos_y] = {1'b1, sm_pos_y[3:0]} - sm_start_y;
         end
     endgenerate
 
@@ -130,6 +135,7 @@ module GPUTop (
 
         .o_calc_ena(sm_ena),
         .o_calc_start_x(sm_start_x),
+        .o_calc_start_y(sm_start_y),
         .o_calc_position_z(sm_position_z),
 
         .o_output_ena(output_ena),
@@ -148,19 +154,11 @@ module GPUTop (
         end
     end
 
-    genvar i;
-    wire [2047:0] texture_data_bus_group;
-    generate
-        for (i = 0; i < 16; i = i + 1) begin
-            assign texture_data_bus[i] = texture_data_bus_group[128 * i + 127 -: 127];
-        end
-    endgenerate
-
     TextureMemory textureMemory(
         .clk(clk_100MHz),
 
         .i_texture_idx(texture_idx),
-        .o_texture_data(texture_data_bus_group),
+        .o_texture_data(texture_data_bus),
 
         .i_wdata(wb_dat_i),
         .i_wea(texture_memory_we & wishbone_ena),
@@ -192,14 +190,6 @@ module GPUTop (
         .i_waddr(wb_adr_i)
     );
 
-
-    wire [2047:0] sm_color_data_group;
-    generate
-        for (i = 0; i < 16; i = i + 1) begin
-            assign sm_color_data_group[128 * i + 127 -: 128] = sm_color_data[i];
-        end
-    endgenerate
-
     VGADriver vga_driver(
         .clk(clk_100MHz),
         .clk_vga(clk_vga),
@@ -210,7 +200,7 @@ module GPUTop (
         .i_current_tile_x(current_tile_x),
         .i_current_tile_y(current_tile_y),
 
-        .i_sm_color_data(sm_color_data_group),
+        .i_sm_color_data(sm_color_data),
 
         .oRed(oRed),
         .oGreen(oGreen),

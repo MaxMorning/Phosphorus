@@ -19,7 +19,8 @@ module GPUController (
     input wire[7:0] i_tilemap_texture_idx,
 
     output wire o_calc_ena,
-    output reg[3:0] o_calc_start_x,
+    output reg[4:0] o_calc_start_x,
+    output reg[4:0] o_calc_start_y,
     output reg[7:0] o_calc_position_z,
 
     output wire o_output_ena,
@@ -86,10 +87,10 @@ module GPUController (
     wire[15:0] spirit_position_x = i_spirit_position_struct[15:0];
     wire[15:0] spirit_position_y = i_spirit_position_struct[31:16];
 
-    assign spirit_in_block =    (spirit_position_x > {current_tile_x - 1, 4'h0}) &
+    assign spirit_in_block =    ((spirit_position_x > {current_tile_x - 1, 4'h0}) || current_tile_x == 0) &
                                 (spirit_position_x < {current_tile_x + 1, 4'h0}) &
-                                (spirit_position_y > {current_tile_y + 1, 4'h0}) &
-                                (spirit_position_y < {current_tile_y - 1, 4'h0});
+                                ((spirit_position_y > {current_tile_y - 1, 4'h0}) || current_tile_y == 0) &
+                                (spirit_position_y < {current_tile_y + 1, 4'h0});
 
 
     assign o_texture_idx = (spirit_idx == 0) ? i_tilemap_texture_idx : i_spirit_position_struct[39:32];
@@ -99,8 +100,6 @@ module GPUController (
 
     assign o_tilemap_x_idx = current_tile_x;
     assign o_tilemap_y_idx = current_tile_y;
-
-    // assign o_calc_start_x = (spirit_idx == spirit_cnt_reg) ? 0 : spirit_position_x[3:0];
 
     reg sm_render_done;
     assign o_sm_render_done = sm_render_done;
@@ -128,6 +127,7 @@ module GPUController (
             end
             else if (spirit_idx == spirit_cnt_reg) begin
                 // 所有精灵图处理完成，接下来处理背景
+                current_tile_x <= current_tile_x + 1;
                 spirit_idx <= 0;
                 sm_render_done <= 1;
             end
@@ -142,16 +142,19 @@ module GPUController (
         if (!reset_n) begin
             o_calc_position_z <= 0;
             o_calc_start_x <= 0;
+            o_calc_start_y <= 0;
         end
         else if (spirit_idx == 0) begin
             // SM 将渲染背景
             o_calc_position_z <= 0;
-            o_calc_start_x <= 0;
+            o_calc_start_x <= 5'b10000;
+            o_calc_start_y <= 5'b10000;
         end
         else begin
             // SM 将渲染精灵
             o_calc_position_z <= i_spirit_position_struct[47:40];
-            o_calc_start_x <= spirit_position_x[3:0];
+            o_calc_start_x <= (spirit_position_x - {current_tile_x - 1, 4'h0});
+            o_calc_start_y <= (spirit_position_y - {current_tile_y - 1, 4'h0});
         end
     end
 endmodule
