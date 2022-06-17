@@ -7,7 +7,7 @@ module StreamProcessor #(
 
     input wire ena,
 
-    input wire [2 * 16 * 8 - 1 :0] i_texture_data,
+    input wire [16 * 16 * 8 - 1 :0] i_texture_data,
     input wire [3:0] i_start_x,
     input wire [7:0] i_position_z,
 
@@ -18,7 +18,7 @@ module StreamProcessor #(
 
     assign o_color = current_color;
 
-    wire [7:0] new_color = i_texture_data[{{my_position_y, 4'h0} + (my_position_x - i_start_x), 3'h7} -: 8];
+    wire [7:0] new_color = i_texture_data[{(my_position_x - i_start_x), 3'h7} -: 8];
 
     always @(posedge clk) begin
         if (!reset_n) begin

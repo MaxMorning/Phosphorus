@@ -6,9 +6,8 @@ module VGADriver (
     input wire i_sm_render_done,
     input wire [5:0] i_current_tile_x,
     input wire [5:0] i_current_tile_y,
-    input wire [3:0] i_tile_row,
 
-    input wire [255:0] i_sm_color_data,
+    input wire [2047:0] i_sm_color_data,
 
     output reg [3:0] oRed, // red signal
     output reg [3:0] oGreen, // green signal
@@ -118,41 +117,29 @@ module VGADriver (
 
 
     /* -----------------------------FrameBuffer Part------------------------------ */
-    reg store_second_16_byte;
-    reg[127:0] next_16_byte_data;
+    wire [10:0] next_hPos = hPos + 1; // plus 1 because block memory have 1 cycle latency to read data.
+    wire[5:0] read_tile_x = next_hPos[9:4];
+    wire[5:0] read_tile_y = vPos[9:4];
 
-    wire frame_buffer_we = i_sm_render_done | store_second_16_byte;
+    wire [3:0] row_idx_in_tile = 4'hf - vPos[3:0];
+    wire [3:0] col_idx_in_tile = 4'hf - next_hPos[3:0];
 
-    wire [127:0] frame_buffer_write_data = store_second_16_byte ? next_16_byte_data : i_sm_color_data[127:0];
-    wire [9:0] frame_buffer_write_row = {i_current_tile_y, i_tile_row[3:1], store_second_16_byte};
-    wire [14:0] frame_buffer_write_address = {frame_buffer_write_row, 5'h0} + {frame_buffer_write_row, 3'h0} + i_current_tile_x;
+    wire [15:0] frame_buffer_read_address = {read_tile_y * 40 + read_tile_x, {row_idx_in_tile[3:0], col_idx_in_tile[3]}};
 
-    wire [18:0] frame_buffer_read_address = vPos * 640 + hPos + 1; // plus 1 because block memory have 1 cycle latency to read data.
+    wire frame_buffer_we = i_sm_render_done;
+    wire[10:0] frame_buffer_write_address = i_current_tile_y * 40 + i_current_tile_x;
     
+    wire [63:0] frame_buffer_read_color_64bit;
+
+    assign frame_buffer_read_color = frame_buffer_read_color_64bit[{col_idx_in_tile[2:0], 3'b111} -: 8];
+
     frame_block_mem frame_block_mem_inst (
         .clka(clk),    // input wire clka
         .wea(frame_buffer_we),      // input wire [0 : 0] wea
-        .addra(frame_buffer_write_address),  // input wire [14 : 0] addra
-        .dina(frame_buffer_write_data),    // input wire [127 : 0] dina
+        .addra(frame_buffer_write_address),  // input wire [10 : 0] addra
+        .dina(i_sm_color_data),    // input wire [2047 : 0] dina
         .clkb(clk_vga),    // input wire clkb
-        .addrb(frame_buffer_read_address),  // input wire [18 : 0] addrb
-        .doutb(frame_buffer_read_color)  // output wire [7 : 0] doutb
+        .addrb(frame_buffer_read_address),  // input wire [15 : 0] addrb
+        .doutb(frame_buffer_read_color_64bit)  // output wire [63 : 0] doutb
     );
-
-    always @(posedge clk) begin
-        if (!reset_n) begin
-            store_second_16_byte <= 0;
-            next_16_byte_data <= 0;
-        end
-        else begin
-            next_16_byte_data <= i_sm_color_data[255:128];
-
-            if (i_sm_render_done) begin
-                store_second_16_byte <= 1;
-            end
-            else begin
-                store_second_16_byte <= 0;
-            end
-        end
-    end
 endmodule

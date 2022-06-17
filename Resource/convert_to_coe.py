@@ -9,7 +9,7 @@ if __name__ == "__main__":
 
             cnt = 0
             for byte in bin_content:
-                if cnt % 4 == 0:
+                if cnt % 256 == 0:
                     coe_file.write('\n')
 
                 hex_str = hex(byte)[2:]

@@ -17,20 +17,20 @@ module GPUTop (
     output wire oVs // Vert sync
 );
     wire sm_ena;
-    wire [2 * 16 * 8 - 1 :0] texture_data_bus;
+    wire [16 * 16 * 8 - 1 :0] texture_data_bus;
     wire [3:0] sm_start_x;
     wire [7:0] sm_position_z;
 
-    wire [2 * 16 * 8 - 1 :0] sm_color_data;
+    wire [16 * 8 - 1 :0] sm_color_data[15:0];
 
     wire sm_render_done;
 
     genvar sm_pos_x;
     genvar sm_pos_y;
     generate
-        for (sm_pos_y = 0; sm_pos_y < 2; sm_pos_y = sm_pos_y + 1) begin
+        for (sm_pos_y = 0; sm_pos_y < 16; sm_pos_y = sm_pos_y + 1) begin
             for (sm_pos_x = 0; sm_pos_x < 16; sm_pos_x = sm_pos_x + 1) begin
-                StreamProcessor #(sm_pos_x, sm_pos_y) sm_inst (
+                StreamProcessor #(sm_pos_x) sm_inst (
                     .clk(clk_100MHz),
                     .reset_n(reset_n & ~sm_render_done),
 
@@ -40,18 +40,17 @@ module GPUTop (
                     .i_start_x(sm_start_x),
                     .i_position_z(sm_position_z),
 
-                    .o_color(sm_color_data[{{sm_pos_y, 4'h0} + sm_pos_x, 3'h7} -: 8])
+                    .o_color(sm_color_data[sm_pos_y][{sm_pos_x, 3'h7} -: 8])
                 );
             end
         end
     endgenerate
 
-    reg wishbone_ena; // 分频�?50MHz，匹配Wishbone总线
+    reg wishbone_ena; // 分频50MHz，匹配Wishbone总线
 
     assign wb_ack_o = ~wishbone_ena & wb_we_i;
 
     wire [7:0] texture_idx;
-    wire [3:0] texture_row_idx;
 
 
     reg CR_we;
@@ -111,7 +110,6 @@ module GPUTop (
 
     wire [5:0] current_tile_x;
     wire [5:0] current_tile_y;
-    wire [3:0] tile_row;
     
     GPUController controller(
         .clk(clk_100MHz),
@@ -122,7 +120,6 @@ module GPUTop (
         .i_cr_value(wb_dat_i[4:0]),
 
         .o_texture_idx(texture_idx),
-        .o_texture_row_idx(texture_row_idx),
 
         .o_spirit_idx(spirit_idx),
         .i_spirit_position_struct(spirit_position_struct),
@@ -139,7 +136,6 @@ module GPUTop (
 
         .o_current_tile_x(current_tile_x),
         .o_current_tile_y(current_tile_y),
-        .o_tile_row(tile_row),
         .o_sm_render_done(sm_render_done)
     );
 
@@ -152,12 +148,19 @@ module GPUTop (
         end
     end
 
+    genvar i;
+    wire [2047:0] texture_data_bus_group;
+    generate
+        for (i = 0; i < 16; i = i + 1) begin
+            assign texture_data_bus[i] = texture_data_bus_group[128 * i + 127 -: 127];
+        end
+    endgenerate
+
     TextureMemory textureMemory(
         .clk(clk_100MHz),
 
         .i_texture_idx(texture_idx),
-        .i_texture_row_idx(texture_row_idx),
-        .o_texture_data(texture_data_bus),
+        .o_texture_data(texture_data_bus_group),
 
         .i_wdata(wb_dat_i),
         .i_wea(texture_memory_we & wishbone_ena),
@@ -190,6 +193,13 @@ module GPUTop (
     );
 
 
+    wire [2047:0] sm_color_data_group;
+    generate
+        for (i = 0; i < 16; i = i + 1) begin
+            assign sm_color_data_group[128 * i + 127 -: 128] = sm_color_data[i];
+        end
+    endgenerate
+
     VGADriver vga_driver(
         .clk(clk_100MHz),
         .clk_vga(clk_vga),
@@ -199,9 +209,8 @@ module GPUTop (
         .i_sm_render_done(sm_render_done),
         .i_current_tile_x(current_tile_x),
         .i_current_tile_y(current_tile_y),
-        .i_tile_row(tile_row),
 
-        .i_sm_color_data(sm_color_data),
+        .i_sm_color_data(sm_color_data_group),
 
         .oRed(oRed),
         .oGreen(oGreen),

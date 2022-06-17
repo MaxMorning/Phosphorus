@@ -1,8 +1,8 @@
-tile_per_row = 8
-tile_per_col = 8
+tile_per_row = 30
+tile_per_col = 40
 
-with open('texture.data', 'rb') as raw_file:
-    with open('reformat_texture.data', 'wb') as result_file:
+with open('logo.data', 'rb') as raw_file:
+    with open('reformat_logo.data', 'wb') as result_file:
         for row_idx in range(tile_per_row):
             for col_idx in range(tile_per_col):
                 for tile_row in range(16):
