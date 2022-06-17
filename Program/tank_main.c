@@ -555,12 +555,15 @@ void  TaskStart (void *pdata)
 
     generate_me_and_enemy();
 
+    // uart_print_str("Render Prepared \n");
     REG8(GPU_BASE + GPU_SPIRIT_CNT_REG) = SPIRIT_COUNT;
     gpu_start_render();
 
     game_loop();
 
     gpu_stop_render();
+
+    // uart_print_str("Render End \n");
 }
 
 void main()

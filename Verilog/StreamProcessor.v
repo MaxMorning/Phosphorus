@@ -16,6 +16,8 @@ module StreamProcessor #(
     reg [7:0] current_position;
     reg [7:0] current_color;
 
+    assign o_color = current_color;
+
     wire [7:0] new_color = i_texture_data[{{my_position_y, 4'h0} + (my_position_x - i_start_x), 3'h7} -: 8];
 
     always @(posedge clk) begin

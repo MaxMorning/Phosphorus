@@ -30,9 +30,9 @@ module GPUTop (
     generate
         for (sm_pos_y = 0; sm_pos_y < 2; sm_pos_y = sm_pos_y + 1) begin
             for (sm_pos_x = 0; sm_pos_x < 16; sm_pos_x = sm_pos_x + 1) begin
-                StreamProcessor #(sm_pos_x, sm_pos_y) (
+                StreamProcessor #(sm_pos_x, sm_pos_y) sm_inst (
                     .clk(clk_100MHz),
-                    .reset_n(reset_n),
+                    .reset_n(reset_n & ~sm_render_done),
 
                     .ena(sm_ena),
 
@@ -48,6 +48,7 @@ module GPUTop (
 
     reg wishbone_ena; // 分频�?50MHz，匹配Wishbone总线
 
+    assign wb_ack_o = ~wishbone_ena & wb_we_i;
 
     wire [7:0] texture_idx;
     wire [3:0] texture_row_idx;

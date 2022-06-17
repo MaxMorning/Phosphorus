@@ -111,7 +111,7 @@ module VGADriver (
         end
         else begin
             oRed <= 4'b0000;
-            oGreen <= 4'b1111;
+            oGreen <= 4'b0000;
             oBlue <= 4'b0000;
         end
     end
@@ -120,10 +120,11 @@ module VGADriver (
     /* -----------------------------FrameBuffer Part------------------------------ */
     reg store_second_16_byte;
 
-    wire frame_buffer_we = store_second_16_byte & i_sm_render_done;
+    wire frame_buffer_we = i_sm_render_done;
 
     wire [127:0] frame_buffer_write_data = store_second_16_byte ? i_sm_color_data[255:128] : i_sm_color_data[127:0];
-    wire [14:0] frame_buffer_write_address = {{i_current_tile_y, 5'h0} + {i_current_tile_y, 3'h0} + i_current_tile_x, i_tile_row[3:1], store_second_16_byte};
+    wire [9:0] frame_buffer_write_row = {i_current_tile_y, i_tile_row[3:1], store_second_16_byte};
+    wire [14:0] frame_buffer_write_address = {frame_buffer_write_row, 5'h0} + {frame_buffer_write_row, 3'h0} + i_current_tile_x;
 
     wire [18:0] frame_buffer_read_address = vPos * 640 + hPos + 1; // plus 1 because block memory have 1 cycle latency to read data.
     

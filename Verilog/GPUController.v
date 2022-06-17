@@ -7,7 +7,7 @@ module GPUController (
     input wire[4:0] i_cr_value,
 
     // output wire o_texture_memory_ena,
-    output wire[7:0] o_texture_idx,
+    output reg[7:0] o_texture_idx,
     output wire[3:0] o_texture_row_idx,
 
     // output wire o_spirit_memory_ena,
@@ -39,10 +39,10 @@ module GPUController (
 
     always @(posedge clk) begin
         if (!reset_n) begin
-            output_ena_reg <= 0;
-            render_ena_reg <= 0;
+            output_ena_reg <= 1;
+            render_ena_reg <= 1;
             mode_reg <= 1;
-            spirit_cnt_reg <= 0;
+            spirit_cnt_reg <= 1;
         end
         else if (i_cr_we) begin
             case (i_cr_addr)
@@ -71,12 +71,16 @@ module GPUController (
 
     reg[5:0] current_tile_x;
     reg[5:0] current_tile_y;
-    reg[3:0] tile_row;
+    reg[4:0] tile_row;
     reg[4:0] spirit_idx;
 
     reg[7:0] frame_cnt;
 
     wire spirit_in_block;
+
+    assign o_current_tile_x = current_tile_x;
+    assign o_current_tile_y = current_tile_y;
+    assign o_tile_row = tile_row;
 
     // (spirit_idx == spirit_cnt_reg) 表示当前正在处理背景图
     // (i_spirit_position_struct[47:40] != 0 && spirit_in_block) 表示当前处理的精灵图有效且在目前渲染区域里有内容
@@ -92,7 +96,7 @@ module GPUController (
                                 (spirit_position_y < {current_tile_y, tile_row} + 2);
 
 
-    assign o_texture_idx = (spirit_idx == spirit_cnt_reg) ? i_tilemap_texture_idx : i_spirit_position_struct[39:32];
+    // assign o_texture_idx = (spirit_idx == spirit_cnt_reg) ? i_tilemap_texture_idx : i_spirit_position_struct[39:32];
 
     assign o_texture_row_idx = tile_row;
 
@@ -114,6 +118,7 @@ module GPUController (
             spirit_idx <= 0;
             frame_cnt <= 0;
             sm_render_done <= 0;
+            o_texture_idx <= 0;
         end
         if (render_ena_reg) begin
             if (current_tile_y == (480 / 16)) begin
@@ -140,9 +145,12 @@ module GPUController (
                 spirit_idx <= 0;
                 tile_row <= tile_row + 2;
                 sm_render_done <= 1;
+                o_texture_idx <= i_tilemap_texture_idx;
             end
             else begin
                 spirit_idx <= spirit_idx + 1;
+                sm_render_done <= 0;
+                o_texture_idx <= i_spirit_position_struct[39:32];
             end
         end
     end
