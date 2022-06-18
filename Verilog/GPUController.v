@@ -87,9 +87,9 @@ module GPUController (
     wire[15:0] spirit_position_x = i_spirit_position_struct[15:0];
     wire[15:0] spirit_position_y = i_spirit_position_struct[31:16];
 
-    assign spirit_in_block =    ((spirit_position_x > {current_tile_x - 1, 4'h0}) || current_tile_x == 0) &
+    assign spirit_in_block =    ((spirit_position_x > {current_tile_x - 1, 4'h0}) || spirit_position_x[15:4] == 0) &
                                 (spirit_position_x < {current_tile_x + 1, 4'h0}) &
-                                ((spirit_position_y > {current_tile_y - 1, 4'h0}) || current_tile_y == 0) &
+                                ((spirit_position_y > {current_tile_y - 1, 4'h0}) || spirit_position_y[15:4] == 0) &
                                 (spirit_position_y < {current_tile_y + 1, 4'h0});
 
 
@@ -119,11 +119,13 @@ module GPUController (
                 current_tile_y <= 0;
                 current_tile_x <= 0;
                 spirit_idx <= 0;
+                sm_render_done <= 0;
             end
             else if (current_tile_x == (640 / 16)) begin
                 current_tile_x <= 0;
                 spirit_idx <= 0;
                 current_tile_y <= current_tile_y + 1;
+                sm_render_done <= 0;
             end
             else if (spirit_idx == spirit_cnt_reg) begin
                 // 所有精灵图处理完成，接下来处理背景

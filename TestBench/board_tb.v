@@ -11,10 +11,22 @@ module BoardTB;
     wire oHs; // Hori sync
     wire oVs; // Vert sync
 
+    wire cs_n;
+    reg sdi;
+    wire sdo;
+    wire wp_n;
+    wire hld_n;
+
     GPUBoard gpu_board(
         .clk(clk),
         .reset(reset),
 
+        .cs_n(cs_n),
+        .sdi(sdi),
+        .sdo(sdo),
+        .wp_n(wp_n),
+        .hld_n(hld_n),
+        
         .oRed(oRed),
         .oBlue(oBlue),
         .oGreen(oGreen),
@@ -31,8 +43,13 @@ module BoardTB;
         end
     end
 
+    always @(posedge gpu_board.wb_controller.flash.sck) begin
+        sdi <= ~sdi;
+    end
+
     initial begin
         reset = 1;
+        sdi = 1'b0;
 
         #17
         reset = 0;

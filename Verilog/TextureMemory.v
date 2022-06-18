@@ -10,7 +10,7 @@ module TextureMemory (
 );
     wire [9:0] write_word_idx = {i_waddr[15:12] - 4'h2, i_waddr[11:6]};
 
-    wire [15:0] row_we = 16'h0 << i_waddr[5:2];
+    wire [15:0] row_we = 16'h1 << i_waddr[5:2];
 
     genvar i;
 
@@ -18,7 +18,7 @@ module TextureMemory (
         for (i = 0; i < 16; i = i + 1) begin
             texture_block_mem_row texture_block_mem_inst (
                 .clka(clk),    // input wire clka
-                .wea(row_we[i]),      // input wire [0 : 0] wea
+                .wea(i_wea & row_we[i]),      // input wire [0 : 0] wea
                 .addra(write_word_idx),  // input wire [8 : 0] addra
                 .dina(i_wdata),    // input wire [31 : 0] dina
                 .clkb(clk),    // input wire clkb

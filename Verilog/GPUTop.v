@@ -1,12 +1,14 @@
 module GPUTop (
     input wire clk_100MHz,
     input wire reset_n,
+    input wire wb_cyc_i,
+    input wire wb_stb_i,
     input wire wb_we_i,
     input wire [3:0] wb_sel_i,
     input wire [26:0] wb_adr_i,
     input wire [31:0] wb_dat_i,
     output wire [31:0] wb_dat_o,
-    output wire        wb_ack_o,
+    output reg        wb_ack_o,
 
     input wire clk_vga,
 
@@ -53,7 +55,19 @@ module GPUTop (
 
     reg wishbone_ena; // 分频50MHz，匹配Wishbone总线
 
-    assign wb_ack_o = ~wishbone_ena & wb_we_i;
+    always @(posedge clk_100MHz) begin
+        if (~reset_n) begin
+            wb_ack_o <= 0;
+        end
+        else if (~wishbone_ena) begin
+            if (wb_cyc_i & wb_stb_i) begin
+                wb_ack_o <= 1;
+            end
+            else begin
+                wb_ack_o <= 0;
+            end
+        end
+    end
 
     wire [7:0] texture_idx;
 
@@ -146,7 +160,7 @@ module GPUTop (
     );
 
     always @(posedge clk_100MHz) begin
-        if (!reset_n) begin
+        if (~reset_n || ~wb_cyc_i || ~wb_stb_i) begin
             wishbone_ena <= 0;
         end
         else begin

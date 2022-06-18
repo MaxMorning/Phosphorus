@@ -37,3 +37,11 @@ set_property PACKAGE_PIN A3 [get_ports {oRed[0]}]
 
 set_property PACKAGE_PIN B11 [get_ports oHs]
 set_property PACKAGE_PIN B12 [get_ports oVs]
+
+##Quad SPI Flash
+
+set_property -dict {PACKAGE_PIN K17 IOSTANDARD LVCMOS33} [get_ports sdo]
+set_property -dict {PACKAGE_PIN K18 IOSTANDARD LVCMOS33} [get_ports sdi]
+set_property -dict {PACKAGE_PIN L14 IOSTANDARD LVCMOS33} [get_ports wp_n]
+set_property -dict {PACKAGE_PIN M14 IOSTANDARD LVCMOS33} [get_ports hld_n]
+set_property -dict {PACKAGE_PIN L13 IOSTANDARD LVCMOS33} [get_ports cs_n]
