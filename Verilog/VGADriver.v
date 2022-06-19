@@ -127,7 +127,7 @@ module VGADriver (
     wire [15:0] frame_buffer_read_address = {read_tile_y * 40 + read_tile_x, {row_idx_in_tile[3:0], col_idx_in_tile[3]}};
 
     wire frame_buffer_we = i_sm_render_done;
-    wire[10:0] frame_buffer_write_address = i_current_tile_y * 40 + i_current_tile_x;
+    wire[10:0] frame_buffer_write_address = i_current_tile_y * 40 + i_current_tile_x - 1; // -1 because the render_done signal have latency
     
     wire [63:0] frame_buffer_read_color_64bit;
 

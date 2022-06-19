@@ -37,7 +37,7 @@ module GPUTop (
             for (sm_pos_x = 0; sm_pos_x < 16; sm_pos_x = sm_pos_x + 1) begin
                 StreamProcessor #(sm_pos_x, sm_pos_y) sm_inst (
                     .clk(clk_100MHz),
-                    .reset_n(reset_n & ~sm_render_done),
+                    .reset_n(reset_n),
 
                     .ena(sm_ena),
 

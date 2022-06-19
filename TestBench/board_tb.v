@@ -43,9 +43,9 @@ module BoardTB;
         end
     end
 
-    always @(posedge gpu_board.wb_controller.flash.sck) begin
-        sdi <= ~sdi;
-    end
+    // always @(posedge gpu_board.wb_controller.flash.sck) begin
+    //     sdi <= ~sdi;
+    // end
 
     initial begin
         reset = 1;

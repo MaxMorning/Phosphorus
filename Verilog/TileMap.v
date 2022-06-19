@@ -30,22 +30,22 @@ module TileMap (
         case (read_byte_address[1:0])
             2'b00: 
             begin
-                o_tilemap_texture_idx = raw_read_data[7:0];
+                o_tilemap_texture_idx = raw_read_data[31:24];
             end
 
             2'b01:
             begin
-                o_tilemap_texture_idx = raw_read_data[15:8];
+                o_tilemap_texture_idx = raw_read_data[23:16];
             end
 
             2'b10:
             begin
-                o_tilemap_texture_idx = raw_read_data[23:16];
+                o_tilemap_texture_idx = raw_read_data[15:8];
             end
 
             default:
             begin
-                o_tilemap_texture_idx = raw_read_data[31:24];
+                o_tilemap_texture_idx = raw_read_data[7:0];
             end
         endcase
     end

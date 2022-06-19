@@ -36,7 +36,7 @@ module GPUController (
 
     assign o_output_ena = output_ena_reg;
 
-    always @(posedge clk) begin
+    always @(posedge clk or negedge reset_n) begin
         if (!reset_n) begin
             output_ena_reg <= 1;
             render_ena_reg <= 1;
@@ -104,7 +104,7 @@ module GPUController (
     reg sm_render_done;
     assign o_sm_render_done = sm_render_done;
 
-    always @(posedge clk) begin
+    always @(posedge clk or negedge reset_n) begin
         if (!reset_n) begin
             current_tile_x <= 0;
             current_tile_y <= 0;
@@ -113,7 +113,7 @@ module GPUController (
             sm_render_done <= 0;
             // o_texture_idx <= 0;
         end
-        if (render_ena_reg) begin
+        else if (render_ena_reg) begin
             if (current_tile_y == (480 / 16)) begin
                 frame_cnt <= frame_cnt + 1;
                 current_tile_y <= 0;
@@ -131,7 +131,7 @@ module GPUController (
                 // 所有精灵图处理完成，接下来处理背景
                 current_tile_x <= current_tile_x + 1;
                 spirit_idx <= 0;
-                sm_render_done <= 1;
+                sm_render_done <= 1;  // 此处render_done 指示的是上一个tile的render done
             end
             else begin
                 spirit_idx <= spirit_idx + 1;
@@ -140,7 +140,7 @@ module GPUController (
         end
     end
 
-    always @(posedge clk) begin
+    always @(posedge clk or negedge reset_n) begin
         if (!reset_n) begin
             o_calc_position_z <= 0;
             o_calc_start_x <= 0;
