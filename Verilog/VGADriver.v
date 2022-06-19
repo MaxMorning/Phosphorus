@@ -124,14 +124,14 @@ module VGADriver (
     wire [3:0] row_idx_in_tile = 4'hf - vPos[3:0];
     wire [3:0] col_idx_in_tile = 4'hf - next_hPos[3:0];
 
-    wire [15:0] frame_buffer_read_address = {read_tile_y * 40 + read_tile_x, {row_idx_in_tile[3:0], col_idx_in_tile[3]}};
+    wire [15:0] frame_buffer_read_address = {read_tile_y * 40 + read_tile_x, {4'hf - row_idx_in_tile[3:0], ~col_idx_in_tile[3]}};
 
     wire frame_buffer_we = i_sm_render_done;
     wire[10:0] frame_buffer_write_address = i_current_tile_y * 40 + i_current_tile_x - 1; // -1 because the render_done signal have latency
     
     wire [63:0] frame_buffer_read_color_64bit;
 
-    assign frame_buffer_read_color = frame_buffer_read_color_64bit[{col_idx_in_tile[2:0], 3'b111} -: 8];
+    assign frame_buffer_read_color = frame_buffer_read_color_64bit[{3'b111 - col_idx_in_tile[2:0], 3'b111} -: 8];
 
     frame_block_mem frame_block_mem_inst (
         .clka(clk),    // input wire clka
