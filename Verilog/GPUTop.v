@@ -43,6 +43,7 @@ module GPUTop (
 
                     .i_texture_data(texture_data_bus[texture_row_idx[sm_pos_y] * 128 + 127 -: 128]),
                     .i_start_x(sm_start_x),
+                    .i_start_y(sm_start_y),
                     .i_position_z(sm_position_z),
 
                     .o_color(sm_color_data[{sm_pos_y[3:0], sm_pos_x[3:0], 3'h7} -: 8])

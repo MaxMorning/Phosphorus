@@ -18,15 +18,15 @@ module GPUController (
     output wire[5:0] o_tilemap_y_idx,
     input wire[7:0] i_tilemap_texture_idx,
 
-    output wire o_calc_ena,
+    output reg o_calc_ena,
     output reg[4:0] o_calc_start_x,
     output reg[4:0] o_calc_start_y,
     output reg[7:0] o_calc_position_z,
 
     output wire o_output_ena,
 
-    output wire [5:0] o_current_tile_x,
-    output wire [5:0] o_current_tile_y,
+    output reg [5:0] o_current_tile_x,
+    output reg [5:0] o_current_tile_y,
     output wire o_sm_render_done
 );
     reg output_ena_reg;
@@ -76,20 +76,15 @@ module GPUController (
 
     wire spirit_in_block;
 
-    assign o_current_tile_x = current_tile_x;
-    assign o_current_tile_y = current_tile_y;
 
-    // (spirit_idx == spirit_cnt_reg) 表示当前正在处理背景图
-    // (i_spirit_position_struct[47:40] != 0 && spirit_in_block) 表示当前处理的精灵图有效且在目前渲染区域里有内容
-    assign o_calc_ena = render_ena_reg & ((spirit_idx == spirit_cnt_reg) | (i_spirit_position_struct[47:40] != 0 && spirit_in_block));
-    // assign o_calc_position_z = (spirit_idx == spirit_cnt_reg) ? 0 : i_spirit_position_struct[47:40];
+
 
     wire[15:0] spirit_position_x = i_spirit_position_struct[15:0];
     wire[15:0] spirit_position_y = i_spirit_position_struct[31:16];
 
-    assign spirit_in_block =    ((spirit_position_x > {current_tile_x - 1, 4'h0}) || spirit_position_x[15:4] == 0) &
+    assign spirit_in_block =    ((spirit_position_x > {current_tile_x - 1, 4'h0}) || current_tile_x == 0) &
                                 (spirit_position_x < {current_tile_x + 1, 4'h0}) &
-                                ((spirit_position_y > {current_tile_y - 1, 4'h0}) || spirit_position_y[15:4] == 0) &
+                                ((spirit_position_y > {current_tile_y - 1, 4'h0}) || current_tile_y == 0) &
                                 (spirit_position_y < {current_tile_y + 1, 4'h0});
 
 
@@ -114,18 +109,18 @@ module GPUController (
             // o_texture_idx <= 0;
         end
         else if (render_ena_reg) begin
-            if (current_tile_y == (480 / 16)) begin
+            if (current_tile_y == (480 / 16 - 1) && (current_tile_x == (640 / 16 - 1))) begin
                 frame_cnt <= frame_cnt + 1;
                 current_tile_y <= 0;
                 current_tile_x <= 0;
                 spirit_idx <= 0;
-                sm_render_done <= 0;
+                sm_render_done <= 1;
             end
-            else if (current_tile_x == (640 / 16)) begin
+            else if (current_tile_x == (640 / 16 - 1) && (spirit_idx == spirit_cnt_reg)) begin
                 current_tile_x <= 0;
                 spirit_idx <= 0;
                 current_tile_y <= current_tile_y + 1;
-                sm_render_done <= 0;
+                sm_render_done <= 1;
             end
             else if (spirit_idx == spirit_cnt_reg) begin
                 // 所有精灵图处理完成，接下来处理背景
@@ -157,6 +152,28 @@ module GPUController (
             o_calc_position_z <= i_spirit_position_struct[47:40];
             o_calc_start_x <= (spirit_position_x - {current_tile_x - 1, 4'h0});
             o_calc_start_y <= (spirit_position_y - {current_tile_y - 1, 4'h0});
+        end
+    end
+
+    always @(posedge clk or negedge reset_n) begin
+        if (!reset_n) begin
+            o_calc_ena <= 0;
+        end
+        else begin
+            // (spirit_idx == spirit_cnt_reg) 表示当前正在处理背景图
+            // (i_spirit_position_struct[47:40] != 0 && spirit_in_block) 表示当前处理的精灵图有效且在目前渲染区域里有内容
+            o_calc_ena <= render_ena_reg & ((spirit_idx == 0) | (i_spirit_position_struct[47:40] != 0 && spirit_in_block));
+        end
+    end
+
+    always @(posedge clk or negedge reset_n) begin
+        if (!reset_n) begin
+            o_current_tile_x <= 0;
+            o_current_tile_y <= 0;
+        end
+        else begin
+            o_current_tile_x <= current_tile_x;
+            o_current_tile_y <= current_tile_y;
         end
     end
 endmodule

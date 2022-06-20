@@ -9,6 +9,7 @@ module StreamProcessor #(
 
     input wire [16 * 8 - 1 :0] i_texture_data,
     input wire [4:0] i_start_x,
+    input wire [4:0] i_start_y,
     input wire [7:0] i_position_z,
 
     output wire [7:0] o_color
@@ -18,6 +19,7 @@ module StreamProcessor #(
     reg [7:0] output_color;
 
     wire [4:0] start_x_check = {1'b1, my_position_x[3:0]} - i_start_x;
+    wire [4:0] start_y_check = {1'b1, my_position_y[3:0]} - i_start_y;
 
     assign o_color = output_color;
 
@@ -36,6 +38,7 @@ module StreamProcessor #(
                 end
                 else begin
                     output_color <= current_color;
+                    current_color <= 255;
                 end
                 current_position <= 0;
             end
@@ -43,6 +46,7 @@ module StreamProcessor #(
                 // spirit
                 if (current_position <= i_position_z &&
                     start_x_check[4] == 0 &&
+                    start_y_check[4] == 0 &&
                     new_color != 255) begin
                     current_color <= new_color;
                     current_position <= i_position_z;
