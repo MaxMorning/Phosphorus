@@ -130,35 +130,35 @@ void gpu_stop_render(void) {
     REG32(GPU_BASE + GPU_RENDER_REG) = 0;
 }
 
-void debug_convert_to_hex(INT32U value, char* buffer) {
-    int i = 7;
-    for (; i >= 0; --i) {
-        int hex_byte = value % 16;
-        value = value >> 4;
+// void debug_convert_to_hex(INT32U value, char* buffer) {
+//     int i = 7;
+//     for (; i >= 0; --i) {
+//         int hex_byte = value % 16;
+//         value = value >> 4;
 
-        if (hex_byte >= 10) {
-            buffer[i] = 'a' + hex_byte - 10;
-        }
-        else {
-            buffer[i] = '0' + hex_byte;
-        }
-    }
-}
+//         if (hex_byte >= 10) {
+//             buffer[i] = 'a' + hex_byte - 10;
+//         }
+//         else {
+//             buffer[i] = '0' + hex_byte;
+//         }
+//     }
+// }
 
 
 void gpu_copy_to_vram(unsigned int dst_base_offset, INT32U* src_mem_ptr, unsigned int mem_size) {
     int i = 0;
 
-    char hex_str[10];
-    hex_str[8] = '\n';
-    hex_str[9] = '\0';
+    // char hex_str[10];
+    // hex_str[8] = '\n';
+    // hex_str[9] = '\0';
 
     for (; i < mem_size; i += 4) {
         REG32(dst_base_offset + i) = src_mem_ptr[i >> 2];
 
-        debug_convert_to_hex(src_mem_ptr[i >> 2], hex_str);
+        // debug_convert_to_hex(src_mem_ptr[i >> 2], hex_str);
 
-        uart_print_str(hex_str);
+        // uart_print_str(hex_str);
     }
 }
 
@@ -202,9 +202,6 @@ void init_gpu_memory(void) {
     // copy texture to vram
     int i = 0;
     INT32U temp;
-    char hex_str[10];
-    hex_str[8] = '\n';
-    hex_str[9] = '\0';
     for (; i < GPU_TEXTURE_SIZE; i += 4) {
         temp = REG32(FLASH_BASE + FLASH_TEXTURE_OFFSET + i);
 
@@ -217,35 +214,31 @@ void init_gpu_memory(void) {
     i = 0;
     for (; i < GPU_TILE_MAP_SIZE; i += 4) {
         tile_map_temp_ptr[i >> 2] = REG32(FLASH_BASE + FLASH_TILEMAP_OFFSET + i);
-
-        // debug_convert_to_hex(tile_map_temp_ptr[i], hex_str);
-
-        // uart_print_str(hex_str);
     }
 
     // copy tile map to vram
-    // gpu_copy_to_vram(GPU_BASE + GPU_TILE_MAP_ARRAY, tile_map_temp_ptr, GPU_TILE_MAP_SIZE);
+    gpu_copy_to_vram(GPU_BASE + GPU_TILE_MAP_ARRAY, tile_map_temp_ptr, GPU_TILE_MAP_SIZE);
     
     uart_print_str("VRAM Initialed\n");
 }
 
 
 void get_random_actor(int idx) {
-    // while (1) {
+    while (1) {
         spirit_array[idx].position_x = rand() % (GPU_RENDER_WIDTH / 16);
         spirit_array[idx].position_y = rand() % (GPU_RENDER_HEIGHT / 16);
-        // if (tile_map[spirit_array[idx].position_y * 40 + spirit_array[idx].position_x] >= 10) {
-        //     // unplaceble
-        //     continue;
-        // }
+        if (tile_map[spirit_array[idx].position_y * 40 + spirit_array[idx].position_x] >= 10) {
+            // unplaceble
+            continue;
+        }
 
         spirit_array[idx].position_x = spirit_array[idx].position_x << 4;
         spirit_array[idx].position_y = spirit_array[idx].position_y << 4;
 
         spirit_array[idx].texture_idx = rand() % 4 + 56; // tank random direction
 
-    //     break;
-    // }
+        break;
+    }
 }
 
 void generate_me_and_enemy() {
@@ -269,10 +262,6 @@ void generate_me_and_enemy() {
     gpu_copy_to_vram(GPU_BASE + GPU_SPIRIT_POS_ARRAY, spirit_array, 2 * SPIRIT_COUNT * sizeof(struct SpiritStruct));
     
     // uart_print_str("Gen Spirit\n");
-}
-
-INT8U get_input_char() {
-
 }
 
 // return 1 means hit something
@@ -325,118 +314,128 @@ INT8U ammo_collision_check(int idx) {
 }
 
 void update_ammo_position() {
-    // int i = SPIRIT_COUNT;
-    // for (; i < SPIRIT_COUNT * 2; ++i) {
-    //     if (0 != spirit_array[i].position_z) {
-    //         switch (spirit_array[i].placeholder) {
-    //             case TANK_DIR_RIGHT:
-    //             {
-    //                 spirit_array[i].position_x += AMMO_MOV_SPEED;
-    //             }
-    //             break;
+    int i = SPIRIT_COUNT;
+    for (; i < SPIRIT_COUNT * 2; ++i) {
+        if (0 != spirit_array[i].position_z) {
+            switch (spirit_array[i].placeholder) {
+                case TANK_DIR_RIGHT:
+                {
+                    spirit_array[i].position_x += AMMO_MOV_SPEED;
+                }
+                break;
 
-    //             case TANK_DIR_LEFT:
-    //             {
-    //                 spirit_array[i].position_x -= AMMO_MOV_SPEED;
-    //             }
-    //             break;
+                case TANK_DIR_LEFT:
+                {
+                    spirit_array[i].position_x -= AMMO_MOV_SPEED;
+                }
+                break;
 
-    //             case TANK_DIR_TOP:
-    //             {
-    //                 spirit_array[i].position_y -= AMMO_MOV_SPEED;
-    //             }
-    //             break;
+                case TANK_DIR_TOP:
+                {
+                    spirit_array[i].position_y -= AMMO_MOV_SPEED;
+                }
+                break;
 
-    //             case TANK_DIR_DOWN:
-    //             {
-    //                 spirit_array[i].position_y += AMMO_MOV_SPEED;
-    //             }
-    //             break;
-    //         }
+                case TANK_DIR_DOWN:
+                {
+                    spirit_array[i].position_y += AMMO_MOV_SPEED;
+                }
+                break;
+            }
 
-    //         if (ammo_collision_check(i) == 1) {
-    //             spirit_array[i].position_z = 0;
-    //             REG8(GPU_BASE + GPU_SPIRIT_POS_ARRAY + i * sizeof(struct SpiritStruct) + 40) = 0;
-    //         }
-    //     }
-    // }
+            if (ammo_collision_check(i) == 1) {
+                spirit_array[i].position_z = 0;
+                REG8(GPU_BASE + GPU_SPIRIT_POS_ARRAY + i * sizeof(struct SpiritStruct) + 40) = 0;
+            }
+        }
+    }
 }
 
 // return 1 means collipse something, can't move
 INT8U tank_move(INT8U tank_idx, INT8U direction) {
-    // INT16U new_pos_x = spirit_array[tank_idx].position_x;
-    // INT16U new_pos_y = spirit_array[tank_idx].position_y;
+    INT16U new_pos_x = spirit_array[tank_idx].position_x;
+    INT16U new_pos_y = spirit_array[tank_idx].position_y;
 
-    // switch (direction) {
-    //     case TANK_DIR_RIGHT:
-    //     {
-    //         new_pos_x += TANK_MOV_SPEED;
-    //     }
-    //     break;
+    switch (direction) {
+        case TANK_DIR_RIGHT:
+        {
+            new_pos_x += TANK_MOV_SPEED;
+        }
+        break;
 
-    //     case TANK_DIR_LEFT:
-    //     {
-    //         new_pos_x -= TANK_MOV_SPEED;
-    //     }
-    //     break;
+        case TANK_DIR_LEFT:
+        {
+            new_pos_x -= TANK_MOV_SPEED;
+        }
+        break;
 
-    //     case TANK_DIR_TOP:
-    //     {
-    //         new_pos_y -= TANK_MOV_SPEED;
-    //     }
-    //     break;
+        case TANK_DIR_TOP:
+        {
+            new_pos_y -= TANK_MOV_SPEED;
+        }
+        break;
 
-    //     case TANK_DIR_DOWN:
-    //     {
-    //         new_pos_y += TANK_MOV_SPEED;
-    //     }
-    //     break;
-    // }
+        case TANK_DIR_DOWN:
+        {
+            new_pos_y += TANK_MOV_SPEED;
+        }
+        break;
+    }
 
-    // INT8U new_tile_x = new_pos_x >> 4;
-    // INT8U new_tile_y = new_pos_y >> 4;
-    // if (new_tile_x >= 40) {
-    //     return 1;
-    // }
-    // if (new_tile_y >= 30) {
-    //     return 1;
-    // }
+    INT8U new_tile_x = new_pos_x >> 4;
+    INT8U new_tile_y = new_pos_y >> 4;
+    if (new_tile_x >= 40) {
+        return 1;
+    }
+    if (new_tile_y >= 30) {
+        return 1;
+    }
 
-    // INT8U left_up_idx = 40 * new_tile_y + new_tile_x;
-    // if (tile_map[left_up_idx] >= 10) {
-    //     return 1;
-    // }
+    INT16U left_up_idx = 40 * new_tile_y + new_tile_x;
+    if (tile_map[left_up_idx] >= 10) {
+        char t[2] = "\0";
+        t[0] = tile_map[left_up_idx];
+        uart_print_str(t);
+        return 1;
+    }
 
-    // if (tile_map[left_up_idx + 41] >= 10) {
-    //     return 1;
-    // }
+    if (tile_map[left_up_idx + 1] >= 10) {
+        return 1;
+    }
+
+    if (tile_map[left_up_idx + 40] >= 10) {
+        return 1;
+    }
+
+    if (tile_map[left_up_idx + 41] >= 10) {
+        return 1;
+    }
 
 
-    // spirit_array[tank_idx].position_x = new_pos_x;
-    // REG16(GPU_BASE + GPU_SPIRIT_POS_ARRAY + tank_idx * sizeof(struct SpiritStruct) + 0) = new_pos_x;
+    spirit_array[tank_idx].position_x = new_pos_x;
 
-    // spirit_array[tank_idx].position_y = new_pos_y;
-    // REG16(GPU_BASE + GPU_SPIRIT_POS_ARRAY + tank_idx * sizeof(struct SpiritStruct) + 16) = new_pos_y;
+    spirit_array[tank_idx].position_y = new_pos_y;
 
-    // INT8U new_direction = (spirit_array[tank_idx].texture_idx & 0xfc) | direction;
-    // spirit_array[tank_idx].texture_idx = new_direction;
-    // REG16(GPU_BASE + GPU_SPIRIT_POS_ARRAY + tank_idx * sizeof(struct SpiritStruct) + 32) = new_direction;
-    
+    INT8U new_direction = (spirit_array[tank_idx].texture_idx & 0xfc) | direction;
+    spirit_array[tank_idx].texture_idx = new_direction;
+
+    gpu_copy_to_vram(GPU_BASE + GPU_SPIRIT_POS_ARRAY + tank_idx * sizeof(struct SpiritStruct), &spirit_array[tank_idx], sizeof(struct SpiritStruct));
+
     return 0;
 }
 
 void fire(INT8U idx) {
-    // if (spirit_array[idx + SPIRIT_COUNT].position_z > 0) {
-    //     spirit_array[idx + SPIRIT_COUNT].position_z = 250;
-    //     spirit_array[idx + SPIRIT_COUNT].texture_idx = spirit_array[idx].texture_idx & 0x3;
-    //     spirit_array[idx + SPIRIT_COUNT].position_x = spirit_array[idx].position_x;
-    //     spirit_array[idx + SPIRIT_COUNT].position_y = spirit_array[idx].position_y;
+    if (spirit_array[idx + SPIRIT_COUNT].position_z > 0) {
+        spirit_array[idx + SPIRIT_COUNT].position_z = 250;
+        spirit_array[idx + SPIRIT_COUNT].texture_idx = spirit_array[idx].texture_idx & 0x3;
+        spirit_array[idx + SPIRIT_COUNT].position_x = spirit_array[idx].position_x;
+        spirit_array[idx + SPIRIT_COUNT].position_y = spirit_array[idx].position_y;
 
-    //     REG16(GPU_BASE + GPU_SPIRIT_POS_ARRAY + idx * sizeof(struct SpiritStruct) + 0) = spirit_array[idx + SPIRIT_COUNT].position_x;
-    //     REG16(GPU_BASE + GPU_SPIRIT_POS_ARRAY + idx * sizeof(struct SpiritStruct) + 16) = spirit_array[idx + SPIRIT_COUNT].position_y;
-    //     REG8(GPU_BASE + GPU_SPIRIT_POS_ARRAY + idx * sizeof(struct SpiritStruct) + 32) = spirit_array[idx + SPIRIT_COUNT].texture_idx;
-    //     REG8(GPU_BASE + GPU_SPIRIT_POS_ARRAY + idx * sizeof(struct SpiritStruct) + 40) = spirit_array[idx + SPIRIT_COUNT].position_z;
-    // }
+        REG16(GPU_BASE + GPU_SPIRIT_POS_ARRAY + idx * sizeof(struct SpiritStruct) + 0) = spirit_array[idx + SPIRIT_COUNT].position_x;
+        REG16(GPU_BASE + GPU_SPIRIT_POS_ARRAY + idx * sizeof(struct SpiritStruct) + 16) = spirit_array[idx + SPIRIT_COUNT].position_y;
+        REG8(GPU_BASE + GPU_SPIRIT_POS_ARRAY + idx * sizeof(struct SpiritStruct) + 32) = spirit_array[idx + SPIRIT_COUNT].texture_idx;
+        REG8(GPU_BASE + GPU_SPIRIT_POS_ARRAY + idx * sizeof(struct SpiritStruct) + 40) = spirit_array[idx + SPIRIT_COUNT].position_z;
+    }
 }
 
 // void AI_move(INT8U enemy_idx) {
@@ -547,46 +546,52 @@ void fire(INT8U idx) {
 
 void game_loop() {
     INT8U command = 'W';
+    INT8U prev_command = 'W';
+    INT32U same_command_cnt = 0;
 
     while (spirit_array[0].position_z > 0) {
-        command = get_input_char();
-
-        if (command <= 'Z') {
-            command += 'a' - 'A';
-        }
+        command = gpio_in() & 0x1f;
 
         INT16U new_pos_x = spirit_array[0].position_x;
 
-        switch (command) {
-            case 'w':
-            {
-                tank_move(0, TANK_DIR_TOP);
-            }
-            break;
+        if (prev_command != command || (prev_command != 0 && same_command_cnt > 200)) {
+            prev_command = command;
+            same_command_cnt = 0;
 
-            case 'a':
-            {
-                tank_move(0, TANK_DIR_LEFT);
-            }
-            break;
+            switch (command) {
+                case BUTTON_UP:
+                {
+                    tank_move(0, TANK_DIR_TOP);
+                }
+                break;
 
-            case 's':
-            {
-                tank_move(0, TANK_DIR_DOWN);
-            }
-            break;
+                case BUTTON_LEFT:
+                {
+                    tank_move(0, TANK_DIR_LEFT);
+                }
+                break;
 
-            case 'd':
-            {
-                tank_move(0, TANK_DIR_RIGHT);
-            }
-            break;
+                case BUTTON_DOWN:
+                {
+                    tank_move(0, TANK_DIR_DOWN);
+                }
+                break;
 
-            case 'f':
-            {
-                fire(0);
+                case BUTTON_RIGHT:
+                {
+                    tank_move(0, TANK_DIR_RIGHT);
+                }
+                break;
+
+                case BUTTON_FIRE:
+                {
+                    fire(0);
+                }
+                break;
             }
-            break;
+        }
+        else {
+            ++same_command_cnt;
         }
 
         // int i = 1;
@@ -597,6 +602,7 @@ void game_loop() {
         // }
 
         update_ammo_position();
+
     }
 }
 
