@@ -130,33 +130,6 @@ void gpu_stop_render(void) {
     REG32(GPU_BASE + GPU_RENDER_REG) = 0;
 }
 
-void gpu_copy_to_vram(unsigned int dst_base_offset, INT32U* src_mem_ptr, unsigned int mem_size) {
-    int i = 0;
-    for (; i < mem_size; i += 4) {
-        REG32(dst_base_offset + i) = src_mem_ptr[i >> 2];
-    }
-}
-
-/***
-    --------------------------- Core Code ---------------------------------
-***/
-INT8U tile_map[GPU_TILE_MAP_SIZE];
-
-// [16:31] are ammos. One actor can only emit one ammo at most.
-struct SpiritStruct spirit_array[SPIRIT_COUNT * 2];
-
-INT32U rand_seed;
-INT32U rand(void) {
-    rand_seed *= rand_seed;
-    rand_seed = rand_seed & 0x000ff000;
-    rand_seed = rand_seed >> 12;
-    
-    return rand_seed;
-}
-// INT32U rand(void) {
-//     return 2143;
-// }
-
 void debug_convert_to_hex(INT32U value, char* buffer) {
     int i = 7;
     for (; i >= 0; --i) {
@@ -172,6 +145,59 @@ void debug_convert_to_hex(INT32U value, char* buffer) {
     }
 }
 
+
+void gpu_copy_to_vram(unsigned int dst_base_offset, INT32U* src_mem_ptr, unsigned int mem_size) {
+    int i = 0;
+
+    char hex_str[10];
+    hex_str[8] = '\n';
+    hex_str[9] = '\0';
+
+    for (; i < mem_size; i += 4) {
+        REG32(dst_base_offset + i) = src_mem_ptr[i >> 2];
+
+        debug_convert_to_hex(src_mem_ptr[i >> 2], hex_str);
+
+        uart_print_str(hex_str);
+    }
+}
+
+/***
+    --------------------------- Core Code ---------------------------------
+***/
+INT8U tile_map[GPU_TILE_MAP_SIZE];
+
+// [16:31] are ammos. One actor can only emit one ammo at most.
+struct SpiritStruct spirit_array[SPIRIT_COUNT * 2];
+
+INT32U rand_seed = 2143;
+INT32U rand(void) {
+   INT32U value;
+
+    //Use a linear congruential generator (LCG) to update the state of the PRNG
+    rand_seed *= 1103515245;
+    rand_seed += 12345;
+    value = (rand_seed >> 16) & 0x07FF;
+
+    rand_seed *= 1103515245;
+    rand_seed += 12345;
+    value <<= 10;
+    value |= (rand_seed >> 16) & 0x03FF;
+
+    rand_seed *= 1103515245;
+    rand_seed += 12345;
+    value <<= 10;
+    value |= (rand_seed >> 16) & 0x03FF;
+
+    //Return the random value
+    rand_seed = value;
+    return value;
+}
+// INT32U rand(void) {
+//     return 2143;
+// }
+
+
 void init_gpu_memory(void) {
     // copy texture to vram
     int i = 0;
@@ -182,10 +208,6 @@ void init_gpu_memory(void) {
     for (; i < GPU_TEXTURE_SIZE; i += 4) {
         temp = REG32(FLASH_BASE + FLASH_TEXTURE_OFFSET + i);
 
-        // debug_convert_to_hex(GPU_BASE + GPU_TEXTURE_MEM + i, hex_str);
-
-        // uart_print_str(hex_str);
-
         REG32(GPU_BASE + GPU_TEXTURE_MEM + i) = temp;
     }
     
@@ -194,11 +216,15 @@ void init_gpu_memory(void) {
     INT32U* tile_map_temp_ptr = tile_map;
     i = 0;
     for (; i < GPU_TILE_MAP_SIZE; i += 4) {
-        tile_map_temp_ptr[i] = REG32(FLASH_BASE + FLASH_TILEMAP_OFFSET + i);
+        tile_map_temp_ptr[i >> 2] = REG32(FLASH_BASE + FLASH_TILEMAP_OFFSET + i);
+
+        // debug_convert_to_hex(tile_map_temp_ptr[i], hex_str);
+
+        // uart_print_str(hex_str);
     }
 
     // copy tile map to vram
-    gpu_copy_to_vram(GPU_BASE + GPU_TILE_MAP_ARRAY, tile_map_temp_ptr, GPU_TILE_MAP_SIZE);
+    // gpu_copy_to_vram(GPU_BASE + GPU_TILE_MAP_ARRAY, tile_map_temp_ptr, GPU_TILE_MAP_SIZE);
     
     uart_print_str("VRAM Initialed\n");
 }
