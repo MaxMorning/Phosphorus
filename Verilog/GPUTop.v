@@ -193,6 +193,7 @@ module GPUTop (
 
     TileMap tileMap(
         .clk(clk_100MHz),
+        .reset_n(reset_n),
 
         .i_tilemap_x_idx(tilemap_x_idx),
         .i_tilemap_y_idx(tilemap_y_idx),

@@ -1,5 +1,6 @@
 module TileMap (
     input wire clk,
+    input wire reset_n,
 
     input wire [5:0] i_tilemap_x_idx,
     input wire [5:0] i_tilemap_y_idx,
@@ -26,8 +27,19 @@ module TileMap (
         .doutb(raw_read_data)  // output wire [31 : 0] doutb
     );
 
+    reg[1:0] last_two_bit;
+
+    always @(posedge clk or negedge reset_n) begin
+        if (~reset_n) begin
+            last_two_bit <= 0;
+        end
+        else begin
+            last_two_bit <= read_byte_address[1:0];
+        end
+    end
+
     always @(*) begin
-        case (read_byte_address[1:0])
+        case (last_two_bit[1:0])
             2'b00: 
             begin
                 o_tilemap_texture_idx = raw_read_data[31:24];
