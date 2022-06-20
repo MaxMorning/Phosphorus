@@ -41,7 +41,7 @@ module GPUController (
             output_ena_reg <= 1;
             render_ena_reg <= 1;
             mode_reg <= 1;
-            spirit_cnt_reg <= 1;
+            spirit_cnt_reg <= 2;
         end
         else if (i_cr_we) begin
             case (i_cr_addr)
