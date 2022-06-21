@@ -1,8 +1,8 @@
 #define FLASH_BASE              0x30000000 
-#define FLASH_TEXTURE_OFFSET    0x10000
-#define FLASH_TILEMAP_OFFSET    0x18000
+#define FLASH_TEXTURE_OFFSET    0xa000
+#define FLASH_TILEMAP_OFFSET    0x12000
 
-#define SPIRIT_COUNT            16
+#define SPIRIT_COUNT            10
 
 #define BUTTON_UP               0x10
 #define BUTTON_LEFT             0x8
@@ -16,5 +16,5 @@
 #define TANK_DIR_DOWN           3
 #define TANK_DIR_INVALID        15
 
-#define AMMO_MOV_SPEED          10
+#define AMMO_MOV_SPEED          1
 #define TANK_MOV_SPEED          1

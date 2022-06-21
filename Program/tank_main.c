@@ -200,7 +200,7 @@ INT32U rand(void) {
 
 void init_gpu_memory(void) {
     // copy texture to vram
-    int i = 0;
+    INT32U i = 0;
     INT32U temp;
     for (; i < GPU_TEXTURE_SIZE; i += 4) {
         temp = REG32(FLASH_BASE + FLASH_TEXTURE_OFFSET + i);
@@ -242,8 +242,7 @@ void get_random_actor(int idx) {
 }
 
 void generate_me_and_enemy() {
-    int cnt = 0;
-    int i = 0;
+    INT8U i = 0;
     for (; i < SPIRIT_COUNT; ++i) {
         get_random_actor(i);
 
@@ -265,56 +264,62 @@ void generate_me_and_enemy() {
 }
 
 // return 1 means hit something
-INT8U ammo_collision_check(int idx) {
-    // INT8U tile_x = spirit_array[idx].position_x >> 4;
-    // INT8U tile_y = spirit_array[idx].position_y >> 4;
-    // INT8U map_tile_idx = tile_y * (GPU_RENDER_WIDTH / 16) + tile_x;
+INT8U ammo_collision_check(INT8U idx) {
+    INT8U tile_x = (spirit_array[idx].position_x + 8) >> 4;
+    INT8U tile_y = (spirit_array[idx].position_y + 8) >> 4;
+    INT32U map_tile_idx = tile_y * (GPU_RENDER_WIDTH / 16) + tile_x;
 
-    // // check hit
-    // int i = 0;
-    // for (; i < SPIRIT_COUNT; ++i) {
-    //     if (idx != i) {
-    //         INT8U tank_tile_x = spirit_array[i].position_x >> 4;
-    //         INT8U tank_tile_y = spirit_array[i].position_y >> 4;
+    // check hit
+    INT32U i = 0;
+    for (; i < SPIRIT_COUNT; ++i) {
+        if (idx != i + SPIRIT_COUNT) {
+            INT8U tank_tile_x = spirit_array[i].position_x >> 4;
+            INT8U tank_tile_y = spirit_array[i].position_y >> 4;
 
-    //         if (tank_tile_x == tile_x && tank_tile_y == tile_y) {
-    //             spirit_array[i].position_z = 0;
+            if (tank_tile_x == tile_x && tank_tile_y == tile_y) {
+                spirit_array[i].position_z = 0;
 
-    //             REG8(GPU_BASE + GPU_SPIRIT_POS_ARRAY + i * sizeof(struct SpiritStruct) + 40) = 0;
+                gpu_copy_to_vram(GPU_BASE + GPU_SPIRIT_POS_ARRAY + i * sizeof(struct SpiritStruct), &spirit_array[i], sizeof(struct SpiritStruct));
 
-    //             return 1;
-    //         }
-    //     }
-    // }
+                return 1;
+            }
+        }
+    }
 
-    // if (
-    //     (tile_map[map_tile_idx] >= 16 && tile_map[map_tile_idx] <= 19) || 
-    //     (tile_map[map_tile_idx] == 23) ||
-    //     (tile_map[map_tile_idx] == 30 || tile_map[map_tile_idx] == 31) ||
-    //     (tile_map[map_tile_idx] == 38 || tile_map[map_tile_idx] == 39) ||
-    //     (tile_map[map_tile_idx] == 46 || tile_map[map_tile_idx] == 47)
-    //     ) {
-    //     // hit something cannot be damaged
-    //     return 1;
-    // }
-    // if (tile_map[map_tile_idx] >= 48 && tile_map[map_tile_idx] < 52) {
-    //     // can be damaged, replace by grass
-    //     tile_map[map_tile_idx] = 6;
-    //     REG8(GPU_BASE + GPU_TILE_MAP_ARRAY + map_tile_idx) = 6;
-    //     return 1;
-    // }
-    // else if (tile_map[map_tile_idx] >= 52 && tile_map[map_tile_idx] < 56) {
-    //     // can be damaged, replace by desert
-    //     tile_map[map_tile_idx] = 4;
-    //     REG8(GPU_BASE + GPU_TILE_MAP_ARRAY + map_tile_idx) = 4;
-    //     return 1;
-    // }
+    INT8U current_texture_idx = tile_map[map_tile_idx];
+    if (
+        (current_texture_idx >= 16 && current_texture_idx <= 19) || 
+        (current_texture_idx == 23) ||
+        (current_texture_idx == 30 || current_texture_idx == 31) ||
+        (current_texture_idx == 38 || current_texture_idx == 39) ||
+        (current_texture_idx == 46 || current_texture_idx == 47)
+        ) {
+            char temp[2] = "\0";
+            temp[0] = current_texture_idx;
+            uart_print_str(temp);
+        // hit something cannot be damaged
+        return 1;
+    }
+    if (current_texture_idx >= 48 && current_texture_idx < 52) {
+        // can be damaged, replace by grass
+        uart_print_str("Replace Grass\n");
+        tile_map[map_tile_idx] = 6;
+        REG8(GPU_BASE + GPU_TILE_MAP_ARRAY + map_tile_idx) = 6;
+        return 1;
+    }
+    else if (current_texture_idx >= 52 && current_texture_idx < 56) {
+        // can be damaged, replace by desert
+        uart_print_str("Replace Desert\n");
+        tile_map[map_tile_idx] = 4;
+        REG8(GPU_BASE + GPU_TILE_MAP_ARRAY + map_tile_idx) = 4;
+        return 1;
+    }
 
     return 0;
 }
 
 void update_ammo_position() {
-    int i = SPIRIT_COUNT;
+    INT8U i = SPIRIT_COUNT;
     for (; i < SPIRIT_COUNT * 2; ++i) {
         if (0 != spirit_array[i].position_z) {
             switch (spirit_array[i].placeholder) {
@@ -343,10 +348,13 @@ void update_ammo_position() {
                 break;
             }
 
-            if (ammo_collision_check(i) == 1) {
+            if ((spirit_array[i].position_x >> 4) >= 40 || (spirit_array[i].position_y >> 4) >= 30 || ammo_collision_check(i) == 1) {
                 spirit_array[i].position_z = 0;
-                REG8(GPU_BASE + GPU_SPIRIT_POS_ARRAY + i * sizeof(struct SpiritStruct) + 40) = 0;
+                // uart_print_str("Remove Ammo\n");
+                // REG8(GPU_BASE + GPU_SPIRIT_POS_ARRAY + i * sizeof(struct SpiritStruct) + 40) = 0;
             }
+
+            gpu_copy_to_vram(GPU_BASE + GPU_SPIRIT_POS_ARRAY + i * sizeof(struct SpiritStruct), &spirit_array[i], sizeof(struct SpiritStruct));
         }
     }
 }
@@ -425,16 +433,15 @@ INT8U tank_move(INT8U tank_idx, INT8U direction) {
 }
 
 void fire(INT8U idx) {
-    if (spirit_array[idx + SPIRIT_COUNT].position_z > 0) {
-        spirit_array[idx + SPIRIT_COUNT].position_z = 250;
-        spirit_array[idx + SPIRIT_COUNT].texture_idx = spirit_array[idx].texture_idx & 0x3;
-        spirit_array[idx + SPIRIT_COUNT].position_x = spirit_array[idx].position_x;
-        spirit_array[idx + SPIRIT_COUNT].position_y = spirit_array[idx].position_y;
+    INT8U ammo_idx = idx + SPIRIT_COUNT;
+    if (spirit_array[ammo_idx].position_z == 0) {
+        spirit_array[ammo_idx].position_z = 250;
+        spirit_array[ammo_idx].texture_idx = 36;
+        spirit_array[ammo_idx].position_x = spirit_array[idx].position_x;
+        spirit_array[ammo_idx].position_y = spirit_array[idx].position_y;
+        spirit_array[ammo_idx].placeholder = spirit_array[idx].texture_idx & 3;
 
-        REG16(GPU_BASE + GPU_SPIRIT_POS_ARRAY + idx * sizeof(struct SpiritStruct) + 0) = spirit_array[idx + SPIRIT_COUNT].position_x;
-        REG16(GPU_BASE + GPU_SPIRIT_POS_ARRAY + idx * sizeof(struct SpiritStruct) + 16) = spirit_array[idx + SPIRIT_COUNT].position_y;
-        REG8(GPU_BASE + GPU_SPIRIT_POS_ARRAY + idx * sizeof(struct SpiritStruct) + 32) = spirit_array[idx + SPIRIT_COUNT].texture_idx;
-        REG8(GPU_BASE + GPU_SPIRIT_POS_ARRAY + idx * sizeof(struct SpiritStruct) + 40) = spirit_array[idx + SPIRIT_COUNT].position_z;
+        gpu_copy_to_vram(GPU_BASE + GPU_SPIRIT_POS_ARRAY + ammo_idx * sizeof(struct SpiritStruct), &spirit_array[ammo_idx], sizeof(struct SpiritStruct));
     }
 }
 
@@ -548,13 +555,12 @@ void game_loop() {
     INT8U command = 'W';
     INT8U prev_command = 'W';
     INT32U same_command_cnt = 0;
+    INT16U update_cnt = 0;
 
     while (spirit_array[0].position_z > 0) {
         command = gpio_in() & 0x1f;
 
-        INT16U new_pos_x = spirit_array[0].position_x;
-
-        if (prev_command != command || (prev_command != 0 && same_command_cnt > 200)) {
+        if (prev_command != command || (prev_command != 0 && same_command_cnt > 300)) {
             prev_command = command;
             same_command_cnt = 0;
 
@@ -601,8 +607,13 @@ void game_loop() {
         //     }
         // }
 
-        update_ammo_position();
-
+        if (update_cnt > 20) {
+            update_ammo_position();
+            update_cnt = 0;
+        }
+        else {
+            ++update_cnt;
+        }
     }
 }
 
@@ -618,7 +629,7 @@ void  TaskStart (void *pdata)
     generate_me_and_enemy();
 
     uart_print_str("Render Prepared\n");
-    REG8(GPU_BASE + GPU_SPIRIT_CNT_REG) = SPIRIT_COUNT;
+    REG8(GPU_BASE + GPU_SPIRIT_CNT_REG) = SPIRIT_COUNT * 2;
     gpu_start_render();
 
     uart_print_str("Enter Loop\n");
