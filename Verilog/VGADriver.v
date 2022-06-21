@@ -103,9 +103,9 @@ module VGADriver (
                 oBlue <= read_color_blue[7:4];
             end
             else begin
-                oRed <= 4'b0000;
-                oGreen <= 4'b0000;
-                oBlue <= 4'b1111;
+                oRed <= 4'b0011;
+                oGreen <= 4'b0011;
+                oBlue <= 4'b0011;
             end
         end
         else begin

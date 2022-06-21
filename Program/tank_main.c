@@ -294,22 +294,17 @@ INT8U ammo_collision_check(INT8U idx) {
         (current_texture_idx == 38 || current_texture_idx == 39) ||
         (current_texture_idx == 46 || current_texture_idx == 47)
         ) {
-            char temp[2] = "\0";
-            temp[0] = current_texture_idx;
-            uart_print_str(temp);
         // hit something cannot be damaged
         return 1;
     }
     if (current_texture_idx >= 48 && current_texture_idx < 52) {
         // can be damaged, replace by grass
-        uart_print_str("Replace Grass\n");
         tile_map[map_tile_idx] = 6;
         REG8(GPU_BASE + GPU_TILE_MAP_ARRAY + map_tile_idx) = 6;
         return 1;
     }
     else if (current_texture_idx >= 52 && current_texture_idx < 56) {
         // can be damaged, replace by desert
-        uart_print_str("Replace Desert\n");
         tile_map[map_tile_idx] = 4;
         REG8(GPU_BASE + GPU_TILE_MAP_ARRAY + map_tile_idx) = 4;
         return 1;
@@ -401,9 +396,6 @@ INT8U tank_move(INT8U tank_idx, INT8U direction) {
 
     INT16U left_up_idx = 40 * new_tile_y + new_tile_x;
     if (tile_map[left_up_idx] >= 10) {
-        char t[2] = "\0";
-        t[0] = tile_map[left_up_idx];
-        uart_print_str(t);
         return 1;
     }
 
@@ -445,117 +437,131 @@ void fire(INT8U idx) {
     }
 }
 
-// void AI_move(INT8U enemy_idx) {
-//     INT8U enemy_idx_tile_x = spirit_array[enemy_idx].position_x >> 4;
-//     INT8U enemy_idx_tile_y = spirit_array[enemy_idx].position_y >> 4;
+void AI_move(INT8U enemy_idx) {
+    if (rand() % 64 > 48) {
+        // 75%概率不移动
+        return;
+    }
 
-//     INT8U player_idx_tile_x = spirit_array[0].position_x >> 4;
-//     INT8U player_idx_tile_y = spirit_array[0].position_y >> 4;
+    INT8U enemy_idx_tile_x = spirit_array[enemy_idx].position_x >> 4;
+    INT8U enemy_idx_tile_y = spirit_array[enemy_idx].position_y >> 4;
 
-//     if (enemy_idx_tile_x == player_idx_tile_x) {
-//         if (enemy_idx_tile_y < player_idx_tile_y) {
-//             INT8U can_fire = 1;
-//             INT8U tile_y = enemy_idx_tile_y;
-//             for (; tile_y < player_idx_tile_y; ++tile_y) {
-//                 if (tile_map[tile_y + enemy_idx_tile_x * 40] >= 10 && tile_map[tile_y + enemy_idx_tile_x * 40] < 48) {
-//                     can_fire = 0;
-//                     break;
-//                 }
-//             }
+    INT8U player_idx_tile_x = spirit_array[0].position_x >> 4;
+    INT8U player_idx_tile_y = spirit_array[0].position_y >> 4;
 
-//             if (can_fire == 1) {
-//                 // rotate to player
-//                 INT8U new_direction = (spirit_array[enemy_idx].texture_idx & 0xfc) | TANK_DIR_DOWN;
-//                 spirit_array[enemy_idx].texture_idx = new_direction;
-//                 REG16(GPU_BASE + GPU_SPIRIT_POS_ARRAY + enemy_idx * sizeof(struct SpiritStruct) + 32) = new_direction;
+    if (enemy_idx_tile_x == player_idx_tile_x) {
+        if (enemy_idx_tile_y < player_idx_tile_y) {
+            INT8U can_fire = 1;
+            INT8U tile_y = enemy_idx_tile_y;
+            for (; tile_y < player_idx_tile_y; ++tile_y) {
+                if (tile_map[tile_y + enemy_idx_tile_x * 40] >= 10 && tile_map[tile_y + enemy_idx_tile_x * 40] < 48) {
+                    can_fire = 0;
+                    break;
+                }
+            }
 
-//                 // fire to player
-//                 fire(enemy_idx);
+            if (can_fire == 1) {
+                // rotate to player
+                INT8U new_direction = (spirit_array[enemy_idx].texture_idx & 0xfc) | TANK_DIR_DOWN;
+                spirit_array[enemy_idx].texture_idx = new_direction;
+                // REG16(GPU_BASE + GPU_SPIRIT_POS_ARRAY + enemy_idx * sizeof(struct SpiritStruct) + 32) = new_direction;
+                gpu_copy_to_vram(GPU_BASE + GPU_SPIRIT_POS_ARRAY + enemy_idx * sizeof(struct SpiritStruct), &spirit_array[enemy_idx], sizeof(struct SpiritStruct));
 
-//                 return;
-//             }
-//         }
-//         else {
-//             INT8U can_fire = 1;
-//             INT8U tile_y = player_idx_tile_y;
-//             for (; tile_y < enemy_idx_tile_y; ++tile_y) {
-//                 if (tile_map[tile_y + enemy_idx_tile_x * 40] >= 10 && tile_map[tile_y + enemy_idx_tile_x * 40] < 48) {
-//                     can_fire = 0;
-//                     break;
-//                 }
-//             }
+                // fire to player
+                fire(enemy_idx);
 
-//             if (can_fire == 1) {
-//                 // rotate to player
-//                 INT8U new_direction = (spirit_array[enemy_idx].texture_idx & 0xfc) | TANK_DIR_TOP;
-//                 spirit_array[enemy_idx].texture_idx = new_direction;
-//                 REG16(GPU_BASE + GPU_SPIRIT_POS_ARRAY + enemy_idx * sizeof(struct SpiritStruct) + 32) = new_direction;
+                return;
+            }
+        }
+        else {
+            INT8U can_fire = 1;
+            INT8U tile_y = player_idx_tile_y;
+            for (; tile_y < enemy_idx_tile_y; ++tile_y) {
+                if (tile_map[tile_y + enemy_idx_tile_x * 40] >= 10 && tile_map[tile_y + enemy_idx_tile_x * 40] < 48) {
+                    can_fire = 0;
+                    break;
+                }
+            }
 
-//                 // fire to player
-//                 fire(enemy_idx);
+            if (can_fire == 1) {
+                // rotate to player
+                INT8U new_direction = (spirit_array[enemy_idx].texture_idx & 0xfc) | TANK_DIR_TOP;
+                spirit_array[enemy_idx].texture_idx = new_direction;
+                gpu_copy_to_vram(GPU_BASE + GPU_SPIRIT_POS_ARRAY + enemy_idx * sizeof(struct SpiritStruct), &spirit_array[enemy_idx], sizeof(struct SpiritStruct));
 
-//                 return;
-//             }
-//         }
-//     }
+                // fire to player
+                fire(enemy_idx);
 
-//     if (enemy_idx_tile_y == player_idx_tile_y) {
-//         if (enemy_idx_tile_x < player_idx_tile_x) {
-//             INT8U can_fire = 1;
-//             INT8U tile_x = enemy_idx_tile_x;
-//             for (; tile_x < player_idx_tile_x; ++tile_x) {
-//                 if (tile_map[tile_x * 40 + enemy_idx_tile_y] >= 10 && tile_map[tile_x * 40 + enemy_idx_tile_y] < 48) {
-//                     can_fire = 0;
-//                     break;
-//                 }
-//             }
+                return;
+            }
+        }
+    }
 
-//             if (can_fire == 1) {
-//                 // rotate to player
-//                 INT8U new_direction = (spirit_array[enemy_idx].texture_idx & 0xfc) | TANK_DIR_RIGHT;
-//                 spirit_array[enemy_idx].texture_idx = new_direction;
-//                 REG16(GPU_BASE + GPU_SPIRIT_POS_ARRAY + enemy_idx * sizeof(struct SpiritStruct) + 32) = new_direction;
+    if (enemy_idx_tile_y == player_idx_tile_y) {
+        if (enemy_idx_tile_x < player_idx_tile_x) {
+            INT8U can_fire = 1;
+            INT8U tile_x = enemy_idx_tile_x;
+            for (; tile_x < player_idx_tile_x; ++tile_x) {
+                if (tile_map[tile_x * 40 + enemy_idx_tile_y] >= 10 && tile_map[tile_x * 40 + enemy_idx_tile_y] < 48) {
+                    can_fire = 0;
+                    break;
+                }
+            }
 
-//                 // fire to player
-//                 fire(enemy_idx);
+            if (can_fire == 1) {
+                // rotate to player
+                INT8U new_direction = (spirit_array[enemy_idx].texture_idx & 0xfc) | TANK_DIR_RIGHT;
+                spirit_array[enemy_idx].texture_idx = new_direction;
+                gpu_copy_to_vram(GPU_BASE + GPU_SPIRIT_POS_ARRAY + enemy_idx * sizeof(struct SpiritStruct), &spirit_array[enemy_idx], sizeof(struct SpiritStruct));
 
-//                 return;
-//             }
-//         }
-//         else {
-//             INT8U can_fire = 1;
-//             INT8U tile_x = player_idx_tile_x;
-//             for (; tile_x < enemy_idx_tile_x; ++tile_x) {
-//                 if (tile_map[tile_x * 40 + enemy_idx_tile_y] >= 10 && tile_map[tile_x * 40 + enemy_idx_tile_y] < 48) {
-//                     can_fire = 0;
-//                     break;
-//                 }
-//             }
+                // fire to player
+                fire(enemy_idx);
 
-//             if (can_fire == 1) {
-//                 // rotate to player
-//                 INT8U new_direction = (spirit_array[enemy_idx].texture_idx & 0xfc) | TANK_DIR_LEFT;
-//                 spirit_array[enemy_idx].texture_idx = new_direction;
-//                 REG16(GPU_BASE + GPU_SPIRIT_POS_ARRAY + enemy_idx * sizeof(struct SpiritStruct) + 32) = new_direction;
+                return;
+            }
+        }
+        else {
+            INT8U can_fire = 1;
+            INT8U tile_x = player_idx_tile_x;
+            for (; tile_x < enemy_idx_tile_x; ++tile_x) {
+                if (tile_map[tile_x * 40 + enemy_idx_tile_y] >= 10 && tile_map[tile_x * 40 + enemy_idx_tile_y] < 48) {
+                    can_fire = 0;
+                    break;
+                }
+            }
 
-//                 // fire to player
-//                 fire(enemy_idx);
+            if (can_fire == 1) {
+                // rotate to player
+                INT8U new_direction = (spirit_array[enemy_idx].texture_idx & 0xfc) | TANK_DIR_LEFT;
+                spirit_array[enemy_idx].texture_idx = new_direction;
+                gpu_copy_to_vram(GPU_BASE + GPU_SPIRIT_POS_ARRAY + enemy_idx * sizeof(struct SpiritStruct), &spirit_array[enemy_idx], sizeof(struct SpiritStruct));
 
-//                 return;
-//             }
-//         }
-//     }
+                // fire to player
+                fire(enemy_idx);
+
+                return;
+            }
+        }
+    }
 
 
-//     // random walk
-//     tank_move(enemy_idx, rand() % 4);
-// }
+    // random walk
+    INT8U walk_random = rand() % 64;
+    if (walk_random > 16) {
+        // 48 / 64的概率向前走
+        tank_move(enemy_idx, spirit_array[enemy_idx].texture_idx & 0x3);
+    }
+    else {
+        tank_move(enemy_idx, rand() % 4);
+    }
+}
 
 void game_loop() {
     INT8U command = 'W';
     INT8U prev_command = 'W';
     INT32U same_command_cnt = 0;
     INT16U update_cnt = 0;
+    INT32U ai_tick_cnt = 0;
 
     while (spirit_array[0].position_z > 0) {
         command = gpio_in() & 0x1f;
@@ -600,12 +606,6 @@ void game_loop() {
             ++same_command_cnt;
         }
 
-        // int i = 1;
-        // for (; i < SPIRIT_COUNT; ++i) {
-        //     if (spirit_array[i].position_z > 0) {
-        //         AI_move(i);
-        //     }
-        // }
 
         if (update_cnt > 20) {
             update_ammo_position();
@@ -613,6 +613,20 @@ void game_loop() {
         }
         else {
             ++update_cnt;
+        }
+
+        if (ai_tick_cnt > 4000) {
+            int i = 1;
+            for (; i < SPIRIT_COUNT; ++i) {
+                if (spirit_array[i].position_z > 0) {
+                    AI_move(i);
+                }
+            }
+
+            ai_tick_cnt = 0;
+        }
+        else {
+            ++ai_tick_cnt;
         }
     }
 }
