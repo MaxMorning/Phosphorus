@@ -263,6 +263,25 @@ void generate_me_and_enemy() {
     // uart_print_str("Gen Spirit\n");
 }
 
+INT8U check_close(INT32U pos_1, INT32U pos_2) {
+    if (pos_1 > pos_2) {
+        if (pos_1 - pos_2 < 4) {
+            return 1;
+        }
+        else {
+            return 0;
+        }
+    }
+    else {
+        if (pos_2 - pos_1 < 4) {
+            return 1;
+        }
+        else {
+            return 0;
+        }
+    }
+}
+
 // return 1 means hit something
 INT8U ammo_collision_check(INT8U idx) {
     INT8U tile_x = (spirit_array[idx].position_x + 8) >> 4;
@@ -272,11 +291,8 @@ INT8U ammo_collision_check(INT8U idx) {
     // check hit
     INT32U i = 0;
     for (; i < SPIRIT_COUNT; ++i) {
-        if (idx != i + SPIRIT_COUNT) {
-            INT8U tank_tile_x = spirit_array[i].position_x >> 4;
-            INT8U tank_tile_y = spirit_array[i].position_y >> 4;
-
-            if (tank_tile_x == tile_x && tank_tile_y == tile_y) {
+        if (idx != i + SPIRIT_COUNT && spirit_array[i].position_z != 0) {
+            if (check_close(spirit_array[i].position_x, spirit_array[idx].position_x) && check_close(spirit_array[i].position_y, spirit_array[idx].position_y)) {
                 spirit_array[i].position_z = 0;
 
                 gpu_copy_to_vram(GPU_BASE + GPU_SPIRIT_POS_ARRAY + i * sizeof(struct SpiritStruct), &spirit_array[i], sizeof(struct SpiritStruct));
@@ -637,6 +653,7 @@ void  TaskStart (void *pdata)
     OSInitTick();	      /* don't put this function in main()        */       
     
 
+    rand_seed = gpio_in();
 
     init_gpu_memory();
 

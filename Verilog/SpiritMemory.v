@@ -1,7 +1,7 @@
 module SpiritMemory (
     input wire clk,
 
-    input wire [4:0] i_spirit_idx,
+    input wire [8:0] i_spirit_idx,
     output wire [63:0] o_spirit_position_struct,
 
     input wire[31:0] i_wdata,
@@ -19,10 +19,10 @@ module SpiritMemory (
     spirit_block_mem spirit_block_mem_inst (
         .clka(clk),    // input wire clka
         .wea(select_with_we),      // input wire [3 : 0] wea
-        .addra(write_address[7:2]),  // input wire [5 : 0] addra
+        .addra(write_address[11:2]),  // input wire [9 : 0] addra
         .dina(i_wdata),    // input wire [31 : 0] dina
         .clkb(clk),    // input wire clkb
-        .addrb(i_spirit_idx),  // input wire [4 : 0] addrb
+        .addrb(i_spirit_idx),  // input wire [8 : 0] addrb
         .doutb(raw_spirit_struct)  // output wire [63 : 0] doutb
     );
 endmodule

@@ -119,7 +119,7 @@ module GPUTop (
         endcase
     end
 
-    wire [4:0] spirit_idx;
+    wire [8:0] spirit_idx;
     wire [63:0] spirit_position_struct;
 
     wire [5:0] tilemap_x_idx;
@@ -137,7 +137,7 @@ module GPUTop (
 
         .i_cr_we(CR_we & wishbone_ena),
         .i_cr_addr(wb_adr_i[3:0]),
-        .i_cr_value(wb_dat_i[4:0]),
+        .i_cr_value(wb_dat_i[9:0]),
 
         .o_texture_idx(texture_idx),
 

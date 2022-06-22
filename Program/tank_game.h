@@ -2,7 +2,7 @@
 #define FLASH_TEXTURE_OFFSET    0xa000
 #define FLASH_TILEMAP_OFFSET    0x12000
 
-#define SPIRIT_COUNT            10
+#define SPIRIT_COUNT            16
 
 #define BUTTON_UP               0x10
 #define BUTTON_LEFT             0x8

@@ -4,13 +4,13 @@ module GPUController (
 
     input wire i_cr_we,
     input wire[3:0] i_cr_addr,
-    input wire[4:0] i_cr_value,
+    input wire[9:0] i_cr_value,
 
     // output wire o_texture_memory_ena,
     output wire[7:0] o_texture_idx,
 
     // output wire o_spirit_memory_ena,
-    output wire[4:0] o_spirit_idx,
+    output wire[9:0] o_spirit_idx,
     input wire[63:0] i_spirit_position_struct,
 
     // output wire o_tilemap_memory_ena,
@@ -32,7 +32,7 @@ module GPUController (
     reg output_ena_reg;
     reg render_ena_reg;
     reg mode_reg;
-    reg[4:0] spirit_cnt_reg;
+    reg[9:0] spirit_cnt_reg;
 
     assign o_output_ena = output_ena_reg;
 
@@ -70,7 +70,7 @@ module GPUController (
 
     reg[5:0] current_tile_x;
     reg[5:0] current_tile_y;
-    reg[4:0] spirit_idx;
+    reg[9:0] spirit_idx;
 
     reg[7:0] frame_cnt;
 
