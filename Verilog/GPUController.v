@@ -38,10 +38,10 @@ module GPUController (
 
     always @(posedge clk or negedge reset_n) begin
         if (!reset_n) begin
-            output_ena_reg <= 1;
-            render_ena_reg <= 1;
+            output_ena_reg <= 0;
+            render_ena_reg <= 0;
             mode_reg <= 1;
-            spirit_cnt_reg <= 2;
+            spirit_cnt_reg <= 0;
         end
         else if (i_cr_we) begin
             case (i_cr_addr)
